@@ -8,11 +8,11 @@ import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from '../users/dto/change-password.dto';
 
 // Mock bcrypt
-const mockBcryptCompare = jest.fn();
-
 jest.mock('bcrypt', () => ({
-  compare: mockBcryptCompare,
+  compare: jest.fn(),
 }));
+
+const mockBcryptCompare = jest.mocked(require('bcrypt').compare);
 
 describe('AuthService', () => {
   let service: AuthService;

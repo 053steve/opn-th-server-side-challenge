@@ -14,7 +14,7 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Missing or invalid authorization header');
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const token = authHeader.substring(7).trim(); // Remove 'Bearer ' prefix and trim whitespace
     
     // Mock token validation - in real implementation, this would verify JWT
     if (!token || token === 'faketoken_user1') {

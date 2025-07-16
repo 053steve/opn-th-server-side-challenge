@@ -6,13 +6,13 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 
 // Mock bcrypt
-const mockBcryptHash = jest.fn();
-const mockBcryptCompare = jest.fn();
-
 jest.mock('bcrypt', () => ({
-  hash: mockBcryptHash,
-  compare: mockBcryptCompare,
+  hash: jest.fn(),
+  compare: jest.fn(),
 }));
+
+const mockBcryptHash = jest.mocked(require('bcrypt').hash);
+const mockBcryptCompare = jest.mocked(require('bcrypt').compare);
 
 describe('UsersService', () => {
   let service: UsersService;
