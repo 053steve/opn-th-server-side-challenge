@@ -1,0 +1,183 @@
+graph TD
+    %% Client Layer
+    subgraph ClientLayer ["Client Layer"]
+        iOS["iOS App<br/>Flutter"]
+        Android["Android App<br/>Flutter"] 
+        Web["Web App<br/>React"]
+    end
+
+    %% Edge & Gateway Layer
+    subgraph EdgeGatewayLayer ["Edge & Gateway Layer"]
+        direction TB
+        CDN["CDN<br/>(e.g., Cloudflare)"]
+        WAF["WAF<br/>(e.g., ModSecurity)"]
+        LB["Load Balancer<br/>(e.g., NGINX Ingress)"]
+        APIGW["API Gateway<br/>(e.g., Kong)"]
+    end
+
+    %% Application Platform - Kubernetes
+    subgraph KubernetesCluster ["Application Platform - Kubernetes"]
+        
+        subgraph Microservices ["Business Logic Microservices"]
+            direction LR
+            USER_SVC["User Service<br/>Golang<br/>- User Management<br/>- Profile CRUD"]
+            CONTENT_SVC["Content Service<br/>Golang<br/>- Content CRUD<br/>- Media Management"]
+            FEED_SVC["Feed Service<br/>Golang<br/>- Feed Generation<br/>- Content Discovery"]
+            INTERACTION_SVC["Interaction Service<br/>Golang<br/>- Likes/Comments<br/>- Engagement"]
+            CHAT_SVC["Chat Service<br/>Golang<br/>- Real-time Messaging<br/>- WebSockets"]
+            NOTIFICATION_SVC["Notification Service<br/>Golang<br/>- Push/Email Logic"]
+            ANALYTICS_SVC["Analytics Service<br/>Golang<br/>- Event Ingestion<br/>- Data Processing"]
+            MEDIA_PROC_SVC["Media Processing Svc<br/>- Image/Video<br/>- Transcoding"]
+        end
+
+        subgraph DataStores ["Data Persistence Layer"]
+            direction LR
+            
+            subgraph MONGODB_CLUSTER ["MongoDB Cluster (Self-Hosted)"]
+                USER_DB[("User DB<br/>MongoDB<br/>- Users<br/>- Profiles<br/>- Preferences")]
+                
+                CONTENT_DB[("Content DB<br/>MongoDB<br/>- Posts<br/>- Media Metadata<br/>- Content Tags")]
+                
+                FEED_DB[("Feed DB<br/>MongoDB<br/>- Feed Items<br/>- User Feeds<br/>- Algorithm Data")]
+                
+                INTERACTION_DB[("Interaction DB<br/>MongoDB<br/>- Likes<br/>- Comments<br/>- Shares")]
+                
+                CHAT_DB[("Chat DB<br/>MongoDB<br/>- Messages<br/>- Conversations<br/>- Chat Metadata")]
+                
+                ANALYTICS_DB[("Analytics DB<br/>MongoDB<br/>- View Events<br/>- Engagement Data<br/>- Metrics")]
+            end
+            
+            REDIS_CLUSTER[("Redis Cluster<br/>Cache & Sessions")]
+            MINIO[("MinIO Cluster<br/>S3-Compatible<br/>Object Storage")]
+            KAFKA[("Apache Kafka<br/>Event Streaming<br/>& Message Bus")]
+            ELASTICSEARCH[("Elasticsearch<br/>Full-Text Search<br/>& Log Aggregation")]
+        end
+
+        subgraph PlatformServices ["Platform & Supporting Services"]
+            direction LR
+            KEYCLOAK["Keycloak<br/>Authentication &<br/>Identity Management"]
+            VAULT["HashiCorp Vault<br/>Secrets Management"]
+        end
+
+    end
+
+    %% Observability Stack
+    subgraph Observability ["Observability Stack"]
+        PROMETHEUS["Prometheus<br/>Metrics & Alerting"]
+        GRAFANA["Grafana<br/>Dashboards &<br/>Visualization"]
+        LOKI["Loki<br/>Log Aggregation"]
+        JAEGER["Jaeger<br/>Distributed Tracing"]
+        
+        GRAFANA --> PROMETHEUS
+        GRAFANA --> LOKI
+        GRAFANA --> JAEGER
+    end
+
+    %% CI/CD & GitOps
+    subgraph CICD ["CI/CD & Infrastructure"]
+        GITLAB["GitLab<br/>Source Code Mgmt<br/>Container Registry"]
+        JENKINS["Jenkins<br/>CI/CD Automation<br/>Build & Test"]
+        SONARQUBE["SonarQube<br/>Static Code Analysis"]
+        ARGOCD["ArgoCD<br/>GitOps Continuous<br/>Delivery"]
+        TERRAFORM["Terraform<br/>Infrastructure as Code"]
+    end
+
+    %% External Services
+    subgraph ExternalServices ["External & Third-Party Services"]
+        OMISE["Omise<br/>Payment Processing"]
+        
+        subgraph AWSServices ["AWS Managed Services"]
+            SES["AWS SES<br/>Email Service<br/>- Transactional Emails"]
+            SNS["AWS SNS<br/>Push Notifications<br/>- Unified iOS/Android<br/>- Connects to APNS/FCM"]
+        end
+    end
+
+    %% CONNECTIONS
+
+    %% Client -> Edge
+    iOS --> LB
+    Android --> LB
+    Web --> CDN
+    CDN --> LB
+    LB --> WAF
+    WAF --> APIGW
+
+    %% Edge -> Microservices on Kubernetes
+    APIGW --> USER_SVC
+    APIGW --> CONTENT_SVC
+    APIGW --> FEED_SVC
+    APIGW --> INTERACTION_SVC
+    APIGW --> CHAT_SVC
+    
+    %% Service -> Data Stores
+    USER_SVC --> USER_DB
+    USER_SVC --> REDIS_CLUSTER
+    CONTENT_SVC --> CONTENT_DB
+    CONTENT_SVC --> ELASTICSEARCH
+    FEED_SVC --> FEED_DB
+    FEED_SVC --> REDIS_CLUSTER
+    INTERACTION_SVC --> INTERACTION_DB
+    CHAT_SVC --> CHAT_DB
+    CHAT_SVC --> REDIS_CLUSTER
+    ANALYTICS_SVC --> ANALYTICS_DB
+    ANALYTICS_SVC --> KAFKA
+    
+    %% Media Processing Flow
+    CONTENT_SVC --> MEDIA_PROC_SVC
+    CONTENT_SVC --> MINIO
+    MEDIA_PROC_SVC --> MINIO
+    
+    %% Service -> Platform Services
+    USER_SVC --> KEYCLOAK
+    Microservices -- "reads secrets from" --> VAULT
+
+    %% Event-Driven Connections
+    USER_SVC -- "publishes/subscribes" --> KAFKA
+    CONTENT_SVC -- "publishes/subscribes" --> KAFKA
+    INTERACTION_SVC -- "publishes/subscribes" --> KAFKA
+    FEED_SVC -- "subscribes" --> KAFKA
+    NOTIFICATION_SVC -- "subscribes" --> KAFKA
+    ELASTICSEARCH -- "consumes" --> KAFKA
+    ANALYTICS_SVC -- "consumes" --> KAFKA
+    
+    %% Notification Flow
+    NOTIFICATION_SVC --> SES
+    NOTIFICATION_SVC --> SNS
+
+    %% Observability Connections
+    KubernetesCluster -- "metrics" --> PROMETHEUS
+    KubernetesCluster -- "logs" --> LOKI
+    KubernetesCluster -- "traces" --> JAEGER
+    
+    %% CI/CD Flow
+    GITLAB -- "triggers build" --> JENKINS
+    JENKINS -- "runs analysis" --> SONARQUBE
+    JENKINS -- "pushes image to" --> GITLAB
+    GITLAB -- "webhook" --> ARGOCD
+    ARGOCD -- "pulls manifest from" --> GITLAB
+    ARGOCD -- "deploys & manages" --> KubernetesCluster
+    TERRAFORM -- "provisions" --> KubernetesCluster
+
+    %% External Connections
+    APIGW --> OMISE
+
+    %% Styling
+    classDef clientStyle fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef edgeStyle fill:#e0f7fa,stroke:#006064,stroke-width:2px
+    classDef k8sStyle fill:#e3f2fd,stroke:#0d47a1,stroke-width:2px
+    classDef microserviceStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef dataStyle fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef platformSvcStyle fill:#f1f8e9,stroke:#33691e,stroke-width:2px
+    classDef cicdStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef obsStyle fill:#fff8e1,stroke:#f57f17,stroke-width:2px
+    classDef externalStyle fill:#efebe9,stroke:#3e2723,stroke-width:2px
+
+    class iOS,Android,Web clientStyle
+    class CDN,WAF,LB,APIGW edgeStyle
+    class KubernetesCluster k8sStyle
+    class USER_SVC,CONTENT_SVC,FEED_SVC,INTERACTION_SVC,CHAT_SVC,NOTIFICATION_SVC,ANALYTICS_SVC,MEDIA_PROC_SVC microserviceStyle
+    class USER_DB,CONTENT_DB,FEED_DB,INTERACTION_DB,CHAT_DB,ANALYTICS_DB,REDIS_CLUSTER,MINIO,KAFKA,ELASTICSEARCH dataStyle
+    class KEYCLOAK,VAULT platformSvcStyle
+    class GITLAB,JENKINS,SONARQUBE,ARGOCD,TERRAFORM cicdStyle
+    class PROMETHEUS,GRAFANA,LOKI,JAEGER obsStyle
+    class OMISE,SES,SNS externalStyle
