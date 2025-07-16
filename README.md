@@ -1,3 +1,6 @@
+# Note
+
+Readme for each assignment will be in its respective folder 
 
 # Server-Side Challenge
 
