@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -23,10 +27,10 @@ describe('UsersService', () => {
     }).compile();
 
     service = module.get<UsersService>(UsersService);
-    
+
     // Reset the private users array before each test
     (service as any).users = [];
-    
+
     // Reset mocks
     jest.clearAllMocks();
   });
@@ -58,13 +62,14 @@ describe('UsersService', () => {
 
     it('should throw ConflictException if user with email already exists', async () => {
       mockBcryptHash.mockResolvedValue('hashedPassword');
-      
+
       // Create first user
       await service.create(validCreateUserDto);
 
       // Try to create user with same email
-      await expect(service.create(validCreateUserDto))
-        .rejects.toThrow(ConflictException);
+      await expect(service.create(validCreateUserDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should hash password before storing', async () => {
@@ -149,8 +154,9 @@ describe('UsersService', () => {
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
-      await expect(service.findOne('non-existent-id'))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.findOne('non-existent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -235,8 +241,9 @@ describe('UsersService', () => {
         address: '456 New St',
       };
 
-      await expect(service.update('non-existent-id', updateUserDto))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        service.update('non-existent-id', updateUserDto),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should handle undefined values correctly', async () => {
@@ -269,16 +276,18 @@ describe('UsersService', () => {
       };
 
       const createdUser = await service.create(createUserDto);
-      
+
       await service.remove(createdUser.id);
 
-      await expect(service.findOne(createdUser.id))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.findOne(createdUser.id)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
-      await expect(service.remove('non-existent-id'))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.remove('non-existent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -306,36 +315,44 @@ describe('UsersService', () => {
       mockBcryptHash.mockResolvedValue('newHashedPassword');
 
       const changePasswordDto: ChangePasswordDto = {
+        userId: createdUser.id,
         currentPassword: 'password123',
         newPassword: 'newPassword456',
       };
 
       await service.changePassword(createdUser.id, changePasswordDto);
 
-      expect(mockBcryptCompare).toHaveBeenCalledWith('password123', 'hashedPassword');
+      expect(mockBcryptCompare).toHaveBeenCalledWith(
+        'password123',
+        'hashedPassword',
+      );
       expect(mockBcryptHash).toHaveBeenCalledWith('newPassword456', 10);
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
       const changePasswordDto: ChangePasswordDto = {
+        userId: 'non-existent-id',
         currentPassword: 'password123',
         newPassword: 'newPassword456',
       };
 
-      await expect(service.changePassword('non-existent-id', changePasswordDto))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        service.changePassword('non-existent-id', changePasswordDto),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw UnauthorizedException when current password is incorrect', async () => {
       mockBcryptCompare.mockResolvedValue(false);
 
       const changePasswordDto: ChangePasswordDto = {
+        userId: createdUser.id,
         currentPassword: 'wrongPassword',
         newPassword: 'newPassword456',
       };
 
-      await expect(service.changePassword(createdUser.id, changePasswordDto))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.changePassword(createdUser.id, changePasswordDto),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
@@ -344,30 +361,46 @@ describe('UsersService', () => {
       const birthDate = new Date('1990-01-01');
       const today = new Date();
       const expectedAge = today.getFullYear() - 1990;
-      
+
       const age = service.calculateAge(birthDate);
-      
+
       expect(age).toBeGreaterThanOrEqual(expectedAge - 1);
       expect(age).toBeLessThanOrEqual(expectedAge);
     });
 
     it('should handle birthday not yet passed this year', () => {
       const today = new Date();
-      const futureDate = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
-      const birthDate = new Date(today.getFullYear() - 25, futureDate.getMonth(), futureDate.getDate());
-      
+      const futureDate = new Date(
+        today.getFullYear(),
+        today.getMonth() + 1,
+        today.getDate(),
+      );
+      const birthDate = new Date(
+        today.getFullYear() - 25,
+        futureDate.getMonth(),
+        futureDate.getDate(),
+      );
+
       const age = service.calculateAge(birthDate);
-      
+
       expect(age).toBe(24); // Should be 24 since birthday hasn't passed
     });
 
     it('should handle birthday already passed this year', () => {
       const today = new Date();
-      const pastDate = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
-      const birthDate = new Date(today.getFullYear() - 25, pastDate.getMonth(), pastDate.getDate());
-      
+      const pastDate = new Date(
+        today.getFullYear(),
+        today.getMonth() - 1,
+        today.getDate(),
+      );
+      const birthDate = new Date(
+        today.getFullYear() - 25,
+        pastDate.getMonth(),
+        pastDate.getDate(),
+      );
+
       const age = service.calculateAge(birthDate);
-      
+
       expect(age).toBe(25); // Should be 25 since birthday has passed
     });
   });

@@ -1,31 +1,38 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
   UseGuards,
   Request,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiSecurity } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiSecurity,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '../auth/auth.guard';
-import { 
-  UserResponseDto, 
+import {
+  UserResponseDto,
   UserProfileResponseDto,
 } from '../common/dto/response.dto';
 
-import { 
+import {
   ValidationErrorResponseDto,
   UnauthorizedErrorResponseDto,
   NotFoundErrorResponseDto,
-  InternalServerErrorResponseDto
+  InternalServerErrorResponseDto,
 } from '../common/dto/error-response.dto';
 
 import { ConflictErrorResponseDto } from '../common/dto/error-response.dto';
@@ -37,32 +44,32 @@ export class UsersController {
 
   @Post()
   @UseGuards(AuthGuard)
-  @ApiSecurity('JWT-auth')  // Try this instead of @ApiBearerAuth
+  @ApiSecurity('JWT-auth') // Try this instead of @ApiBearerAuth
   @ApiOperation({ summary: 'Create a new user' })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'User successfully created',
-    type: UserResponseDto
+    type: UserResponseDto,
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Unauthorized - Missing or invalid authorization header',
-    type: UnauthorizedErrorResponseDto
+    type: UnauthorizedErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 409, 
+  @ApiResponse({
+    status: 409,
     description: 'User with this email already exists',
-    type: ConflictErrorResponseDto
+    type: ConflictErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 422, 
+  @ApiResponse({
+    status: 422,
     description: 'Validation error',
-    type: ValidationErrorResponseDto
+    type: ValidationErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 500, 
+  @ApiResponse({
+    status: 500,
     description: 'Internal server error',
-    type: InternalServerErrorResponseDto
+    type: InternalServerErrorResponseDto,
   })
   async create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
@@ -72,51 +79,52 @@ export class UsersController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get all users' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'List of all users',
-    type: [UserResponseDto]
+    type: [UserResponseDto],
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Unauthorized - Missing or invalid authorization header',
-    type: UnauthorizedErrorResponseDto
+    type: UnauthorizedErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 500, 
+  @ApiResponse({
+    status: 500,
     description: 'Internal server error',
-    type: InternalServerErrorResponseDto
+    type: InternalServerErrorResponseDto,
   })
   async findAll() {
     return this.usersService.findAll();
   }
 
-  @Get('profile')
+  @Get('profile/:id')
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Current user profile',
-    type: UserProfileResponseDto
+    type: UserProfileResponseDto,
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Unauthorized - Missing or invalid authorization header',
-    type: UnauthorizedErrorResponseDto
+    type: UnauthorizedErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'User not found',
-    type: NotFoundErrorResponseDto
+    type: NotFoundErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 500, 
+  @ApiResponse({
+    status: 500,
     description: 'Internal server error',
-    type: InternalServerErrorResponseDto
+    type: InternalServerErrorResponseDto,
   })
-  async getProfile(@Request() req) {
-    const user = await this.usersService.findOne(req.user.id);
+  async getProfile(@Param('id') id: string, @Request() req) {
+    // if not use fix token we can use req.user.id from the middleware, but for now we use the id from the param
+    const user = await this.usersService.findOne(id);
     const age = this.usersService.calculateAge(user.dateOfBirth);
     return { ...user, age };
   }
@@ -126,25 +134,25 @@ export class UsersController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiParam({ name: 'id', description: 'User ID' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'User found',
-    type: UserResponseDto
+    type: UserResponseDto,
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Unauthorized - Missing or invalid authorization header',
-    type: UnauthorizedErrorResponseDto
+    type: UnauthorizedErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'User not found',
-    type: NotFoundErrorResponseDto
+    type: NotFoundErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 500, 
+  @ApiResponse({
+    status: 500,
     description: 'Internal server error',
-    type: InternalServerErrorResponseDto
+    type: InternalServerErrorResponseDto,
   })
   async findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
@@ -155,30 +163,30 @@ export class UsersController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update user' })
   @ApiParam({ name: 'id', description: 'User ID' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'User successfully updated',
-    type: UserResponseDto
+    type: UserResponseDto,
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Unauthorized - Missing or invalid authorization header',
-    type: UnauthorizedErrorResponseDto
+    type: UnauthorizedErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'User not found',
-    type: NotFoundErrorResponseDto
+    type: NotFoundErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 422, 
+  @ApiResponse({
+    status: 422,
     description: 'Validation error',
-    type: ValidationErrorResponseDto
+    type: ValidationErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 500, 
+  @ApiResponse({
+    status: 500,
     description: 'Internal server error',
-    type: InternalServerErrorResponseDto
+    type: InternalServerErrorResponseDto,
   })
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
@@ -191,20 +199,20 @@ export class UsersController {
   @ApiOperation({ summary: 'Delete user' })
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({ status: 204, description: 'User successfully deleted' })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Unauthorized - Missing or invalid authorization header',
-    type: UnauthorizedErrorResponseDto
+    type: UnauthorizedErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'User not found',
-    type: NotFoundErrorResponseDto
+    type: NotFoundErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 500, 
+  @ApiResponse({
+    status: 500,
     description: 'Internal server error',
-    type: InternalServerErrorResponseDto
+    type: InternalServerErrorResponseDto,
   })
   async remove(@Param('id') id: string) {
     await this.usersService.remove(id);

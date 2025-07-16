@@ -11,15 +11,15 @@ export class AppController {
 
   @Get()
   @ApiOperation({ summary: 'Health check' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Application is running',
-    type: HealthResponseDto
+    type: HealthResponseDto,
   })
-  @ApiResponse({ 
-    status: 500, 
+  @ApiResponse({
+    status: 500,
     description: 'Internal server error',
-    type: InternalServerErrorResponseDto
+    type: InternalServerErrorResponseDto,
   })
   getHello(): { message: string; timestamp: string } {
     return {

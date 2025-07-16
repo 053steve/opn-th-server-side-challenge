@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
@@ -16,10 +20,10 @@ export class AuthService {
   async signup(createUserDto: CreateUserDto) {
     try {
       const user = await this.usersService.create(createUserDto);
-      
+
       // Generate tokens
       const tokens = await this.generateTokens(user.id, user.email);
-      
+
       return {
         user,
         ...tokens,
@@ -38,17 +42,20 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     // Generate tokens
     const tokens = await this.generateTokens(user.id, user.email);
-    
+
     // Return user without password
     const { password, ...userWithoutPassword } = user;
-    
+
     return {
       user: userWithoutPassword,
       ...tokens,
@@ -62,10 +69,10 @@ export class AuthService {
       });
 
       const user = await this.usersService.findOne(payload.sub);
-      
+
       // Generate new tokens
       const tokens = await this.generateTokens(user.id, user.email);
-      
+
       return {
         user,
         ...tokens,

@@ -67,4 +67,4 @@ export class HealthResponseDto {
 export class UsersListResponseDto {
   @ApiProperty({ type: [UserResponseDto] })
   users: UserResponseDto[];
-} 
+}

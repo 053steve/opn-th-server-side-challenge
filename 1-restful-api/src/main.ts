@@ -17,16 +17,19 @@ async function bootstrap() {
       transform: true,
       errorHttpStatusCode: 422,
       exceptionFactory: (errors) => {
-        const messages = errors.map(error => {
+        const messages = errors.map((error) => {
           const constraints = error.constraints;
           return Object.values(constraints).join(', ');
         });
-        
-        return new HttpException({
-          statusCode: 422,
-          message: messages,
-          error: 'Unprocessable Entity',
-        }, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        return new HttpException(
+          {
+            statusCode: 422,
+            message: messages,
+            error: 'Unprocessable Entity',
+          },
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
       },
     }),
   );
@@ -37,7 +40,8 @@ async function bootstrap() {
   // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('RESTful API')
-    .setDescription(`
+    .setDescription(
+      `
       A comprehensive RESTful API for user management and authentication.
       
       ## Features
@@ -60,7 +64,8 @@ async function bootstrap() {
       - **404**: Resource not found
       - **409**: Conflict (e.g., email already exists)
       - **500**: Internal server error
-    `)
+    `,
+    )
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -97,7 +102,9 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 Swagger documentation is available at: http://localhost:${port}/api`);
+  console.log(
+    `📚 Swagger documentation is available at: http://localhost:${port}/api`,
+  );
   console.log(`🔑 For testing, use Authorization: Bearer faketoken_user1`);
 }
 bootstrap();

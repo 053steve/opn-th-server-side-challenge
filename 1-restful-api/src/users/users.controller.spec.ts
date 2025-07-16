@@ -16,6 +16,7 @@ describe('UsersController', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    calculateAge: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -76,10 +77,13 @@ describe('UsersController', () => {
     });
 
     it('should handle ConflictException when user already exists', async () => {
-      mockUsersService.create.mockRejectedValue(new ConflictException('User with this email already exists'));
+      mockUsersService.create.mockRejectedValue(
+        new ConflictException('User with this email already exists'),
+      );
 
-      await expect(controller.create(validCreateUserDto))
-        .rejects.toThrow(ConflictException);
+      await expect(controller.create(validCreateUserDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should validate email format', async () => {
@@ -90,8 +94,7 @@ describe('UsersController', () => {
 
       mockUsersService.create.mockRejectedValue(new Error('Validation failed'));
 
-      await expect(controller.create(invalidEmailDto))
-        .rejects.toThrow();
+      await expect(controller.create(invalidEmailDto)).rejects.toThrow();
     });
 
     it('should validate password length', async () => {
@@ -102,8 +105,7 @@ describe('UsersController', () => {
 
       mockUsersService.create.mockRejectedValue(new Error('Validation failed'));
 
-      await expect(controller.create(shortPasswordDto))
-        .rejects.toThrow();
+      await expect(controller.create(shortPasswordDto)).rejects.toThrow();
     });
 
     it('should validate required fields', async () => {
@@ -115,8 +117,7 @@ describe('UsersController', () => {
 
       mockUsersService.create.mockRejectedValue(new Error('Validation failed'));
 
-      await expect(controller.create(incompleteDto))
-        .rejects.toThrow();
+      await expect(controller.create(incompleteDto)).rejects.toThrow();
     });
 
     it('should validate gender enum', async () => {
@@ -127,8 +128,7 @@ describe('UsersController', () => {
 
       mockUsersService.create.mockRejectedValue(new Error('Validation failed'));
 
-      await expect(controller.create(invalidGenderDto))
-        .rejects.toThrow();
+      await expect(controller.create(invalidGenderDto)).rejects.toThrow();
     });
 
     it('should validate date format', async () => {
@@ -139,14 +139,16 @@ describe('UsersController', () => {
 
       mockUsersService.create.mockRejectedValue(new Error('Validation failed'));
 
-      await expect(controller.create(invalidDateDto))
-        .rejects.toThrow();
+      await expect(controller.create(invalidDateDto)).rejects.toThrow();
     });
   });
 
   describe('findAll', () => {
     it('should return all users', async () => {
-      const mockUsers = [mockUser, { ...mockUser, id: 'user-2', email: 'user2@example.com' }];
+      const mockUsers = [
+        mockUser,
+        { ...mockUser, id: 'user-2', email: 'user2@example.com' },
+      ];
       mockUsersService.findAll.mockResolvedValue(mockUsers);
 
       const result = await controller.findAll();
@@ -174,6 +176,171 @@ describe('UsersController', () => {
     });
   });
 
+  describe('getProfile', () => {
+    const mockRequest = {
+      user: {
+        id: 'user-id',
+        email: 'test@example.com',
+      },
+    };
+
+    it('should return user profile with age calculation', async () => {
+      const userWithAge = {
+        ...mockUser,
+        age: 33, // Calculated age
+      };
+
+      mockUsersService.findOne.mockResolvedValue(mockUser);
+      mockUsersService.calculateAge = jest.fn().mockReturnValue(33);
+
+      const result = await controller.getProfile('user-id', mockRequest);
+
+      expect(result).toEqual(userWithAge);
+      expect(mockUsersService.findOne).toHaveBeenCalledWith('user-id');
+      expect(mockUsersService.calculateAge).toHaveBeenCalledWith(
+        mockUser.dateOfBirth,
+      );
+    });
+
+    it('should handle NotFoundException when user not found', async () => {
+      mockUsersService.findOne.mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
+
+      await expect(
+        controller.getProfile('non-existent-id', mockRequest),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should use ID from parameter instead of request user', async () => {
+      const differentUserId = 'different-user-id';
+      const differentUser = {
+        ...mockUser,
+        id: differentUserId,
+        email: 'different@example.com',
+      };
+
+      const userWithAge = {
+        ...differentUser,
+        age: 25,
+      };
+
+      mockUsersService.findOne.mockResolvedValue(differentUser);
+      mockUsersService.calculateAge = jest.fn().mockReturnValue(25);
+
+      const result = await controller.getProfile(differentUserId, mockRequest);
+
+      expect(result).toEqual(userWithAge);
+      expect(mockUsersService.findOne).toHaveBeenCalledWith(differentUserId);
+      expect(mockUsersService.calculateAge).toHaveBeenCalledWith(
+        differentUser.dateOfBirth,
+      );
+    });
+
+    it('should allow accessing any user profile regardless of authenticated user', async () => {
+      // This test verifies that the controller uses the parameter ID instead of req.user.id
+      const authenticatedUserId = 'authenticated-user-id';
+      const requestedUserId = 'requested-user-id';
+
+      const mockRequestWithDifferentUser = {
+        user: {
+          id: authenticatedUserId,
+          email: 'authenticated@example.com',
+        },
+      };
+
+      const requestedUser = {
+        ...mockUser,
+        id: requestedUserId,
+        email: 'requested@example.com',
+      };
+
+      const requestedUserWithAge = {
+        ...requestedUser,
+        age: 30,
+      };
+
+      mockUsersService.findOne.mockResolvedValue(requestedUser);
+      mockUsersService.calculateAge = jest.fn().mockReturnValue(30);
+
+      const result = await controller.getProfile(
+        requestedUserId,
+        mockRequestWithDifferentUser,
+      );
+
+      expect(result).toEqual(requestedUserWithAge);
+      expect(mockUsersService.findOne).toHaveBeenCalledWith(requestedUserId);
+      // Verify that we're not using the authenticated user's ID
+      expect(mockUsersService.findOne).not.toHaveBeenCalledWith(
+        authenticatedUserId,
+      );
+    });
+
+    it('should not return user password in profile', async () => {
+      // The service's findOne method already removes the password, so we mock it without password
+      const userWithoutPassword = {
+        ...mockUser,
+        // password is not included as the service removes it
+      };
+
+      const userWithAge = {
+        ...mockUser,
+        age: 33,
+      };
+
+      mockUsersService.findOne.mockResolvedValue(userWithoutPassword);
+      mockUsersService.calculateAge = jest.fn().mockReturnValue(33);
+
+      const result = await controller.getProfile('user-id', mockRequest);
+
+      expect(result).not.toHaveProperty('password');
+      expect(result).toEqual(userWithAge);
+    });
+
+    it('should handle invalid user ID format', async () => {
+      mockUsersService.findOne.mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
+
+      await expect(controller.getProfile('', mockRequest)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should calculate age correctly for different birth dates', async () => {
+      const youngUser = {
+        ...mockUser,
+        dateOfBirth: new Date('2000-01-01'),
+      };
+
+      const youngUserWithAge = {
+        ...youngUser,
+        age: 23,
+      };
+
+      mockUsersService.findOne.mockResolvedValue(youngUser);
+      mockUsersService.calculateAge = jest.fn().mockReturnValue(23);
+
+      const result = await controller.getProfile('young-user-id', mockRequest);
+
+      expect(result).toEqual(youngUserWithAge);
+      expect(mockUsersService.calculateAge).toHaveBeenCalledWith(
+        youngUser.dateOfBirth,
+      );
+    });
+
+    it('should handle age calculation errors gracefully', async () => {
+      mockUsersService.findOne.mockResolvedValue(mockUser);
+      mockUsersService.calculateAge = jest.fn().mockImplementation(() => {
+        throw new Error('Age calculation error');
+      });
+
+      await expect(
+        controller.getProfile('user-id', mockRequest),
+      ).rejects.toThrow('Age calculation error');
+    });
+  });
+
   describe('findOne', () => {
     it('should return a user by id', async () => {
       mockUsersService.findOne.mockResolvedValue(mockUser);
@@ -185,10 +352,13 @@ describe('UsersController', () => {
     });
 
     it('should handle NotFoundException when user not found', async () => {
-      mockUsersService.findOne.mockRejectedValue(new NotFoundException('User not found'));
+      mockUsersService.findOne.mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
 
-      await expect(controller.findOne('non-existent-id'))
-        .rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('non-existent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should not return user password', async () => {
@@ -200,10 +370,11 @@ describe('UsersController', () => {
     });
 
     it('should handle invalid user ID format', async () => {
-      mockUsersService.findOne.mockRejectedValue(new NotFoundException('User not found'));
+      mockUsersService.findOne.mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
 
-      await expect(controller.findOne(''))
-        .rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -230,14 +401,20 @@ describe('UsersController', () => {
       const result = await controller.update('user-id', validUpdateUserDto);
 
       expect(result).toEqual(updatedUser);
-      expect(mockUsersService.update).toHaveBeenCalledWith('user-id', validUpdateUserDto);
+      expect(mockUsersService.update).toHaveBeenCalledWith(
+        'user-id',
+        validUpdateUserDto,
+      );
     });
 
     it('should handle NotFoundException when user not found', async () => {
-      mockUsersService.update.mockRejectedValue(new NotFoundException('User not found'));
+      mockUsersService.update.mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
 
-      await expect(controller.update('non-existent-id', validUpdateUserDto))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        controller.update('non-existent-id', validUpdateUserDto),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should allow partial updates', async () => {
@@ -256,7 +433,10 @@ describe('UsersController', () => {
       const result = await controller.update('user-id', partialUpdateDto);
 
       expect(result).toEqual(partiallyUpdatedUser);
-      expect(mockUsersService.update).toHaveBeenCalledWith('user-id', partialUpdateDto);
+      expect(mockUsersService.update).toHaveBeenCalledWith(
+        'user-id',
+        partialUpdateDto,
+      );
     });
 
     it('should validate gender enum in updates', async () => {
@@ -266,8 +446,9 @@ describe('UsersController', () => {
 
       mockUsersService.update.mockRejectedValue(new Error('Validation failed'));
 
-      await expect(controller.update('user-id', invalidGenderDto))
-        .rejects.toThrow();
+      await expect(
+        controller.update('user-id', invalidGenderDto),
+      ).rejects.toThrow();
     });
 
     it('should validate date format in updates', async () => {
@@ -277,8 +458,9 @@ describe('UsersController', () => {
 
       mockUsersService.update.mockRejectedValue(new Error('Validation failed'));
 
-      await expect(controller.update('user-id', invalidDateDto))
-        .rejects.toThrow();
+      await expect(
+        controller.update('user-id', invalidDateDto),
+      ).rejects.toThrow();
     });
 
     it('should handle empty update DTO', async () => {
@@ -289,7 +471,10 @@ describe('UsersController', () => {
       const result = await controller.update('user-id', emptyUpdateDto);
 
       expect(result).toEqual(mockUser);
-      expect(mockUsersService.update).toHaveBeenCalledWith('user-id', emptyUpdateDto);
+      expect(mockUsersService.update).toHaveBeenCalledWith(
+        'user-id',
+        emptyUpdateDto,
+      );
     });
   });
 
@@ -303,17 +488,21 @@ describe('UsersController', () => {
     });
 
     it('should handle NotFoundException when user not found', async () => {
-      mockUsersService.remove.mockRejectedValue(new NotFoundException('User not found'));
+      mockUsersService.remove.mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
 
-      await expect(controller.remove('non-existent-id'))
-        .rejects.toThrow(NotFoundException);
+      await expect(controller.remove('non-existent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should handle invalid user ID', async () => {
-      mockUsersService.remove.mockRejectedValue(new NotFoundException('User not found'));
+      mockUsersService.remove.mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
 
-      await expect(controller.remove(''))
-        .rejects.toThrow(NotFoundException);
+      await expect(controller.remove('')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -372,6 +561,23 @@ describe('UsersController', () => {
 
       expect(mockUsersService.remove).toHaveBeenCalled();
     });
+
+    it('should protect getProfile endpoint', async () => {
+      const mockRequest = {
+        user: {
+          id: 'user-id',
+          email: 'test@example.com',
+        },
+      };
+
+      mockUsersService.findOne.mockResolvedValue(mockUser);
+      mockUsersService.calculateAge = jest.fn().mockReturnValue(33);
+
+      await controller.getProfile('user-id', mockRequest);
+
+      expect(mockUsersService.findOne).toHaveBeenCalled();
+      expect(mockUsersService.calculateAge).toHaveBeenCalled();
+    });
   });
 
   describe('Controller instantiation', () => {
@@ -420,9 +626,32 @@ describe('UsersController', () => {
     it('should return 200 for successful updates', async () => {
       mockUsersService.update.mockResolvedValue(mockUser);
 
-      const result = await controller.update('user-id', { address: 'New Address' });
+      const result = await controller.update('user-id', {
+        address: 'New Address',
+      });
 
       expect(result).toEqual(mockUser);
+    });
+
+    it('should return 200 for successful getProfile', async () => {
+      const mockRequest = {
+        user: {
+          id: 'user-id',
+          email: 'test@example.com',
+        },
+      };
+
+      const userWithAge = {
+        ...mockUser,
+        age: 33,
+      };
+
+      mockUsersService.findOne.mockResolvedValue(mockUser);
+      mockUsersService.calculateAge = jest.fn().mockReturnValue(33);
+
+      const result = await controller.getProfile('user-id', mockRequest);
+
+      expect(result).toEqual(userWithAge);
     });
   });
 
@@ -431,15 +660,17 @@ describe('UsersController', () => {
       const serviceError = new Error('Service error');
       mockUsersService.create.mockRejectedValue(serviceError);
 
-      await expect(controller.create({
-        email: 'test@example.com',
-        password: 'password123',
-        name: 'Test User',
-        dateOfBirth: '1990-01-01',
-        gender: 'male',
-        address: '123 Test St',
-        subscribeToNewsletter: true,
-      })).rejects.toThrow('Service error');
+      await expect(
+        controller.create({
+          email: 'test@example.com',
+          password: 'password123',
+          name: 'Test User',
+          dateOfBirth: '1990-01-01',
+          gender: 'male',
+          address: '123 Test St',
+          subscribeToNewsletter: true,
+        }),
+      ).rejects.toThrow('Service error');
     });
 
     it('should handle multiple concurrent requests', async () => {

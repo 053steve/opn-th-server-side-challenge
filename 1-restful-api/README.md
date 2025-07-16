@@ -46,6 +46,7 @@ pnpm test:debug
 
 # Run end-to-end tests
 pnpm test:e2e
+
 ```
 
 ### Code Quality
@@ -74,3 +75,5 @@ pnpm test
 ```
 
 The application will be available at `http://localhost:3000` and includes Swagger documentation at `http://localhost:3000/api`.
+
+Postman collection will be in `1-restful-api/postman_collections/1-Restful-api-postman-collection.postman_collection.json`

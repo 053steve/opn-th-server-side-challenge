@@ -11,11 +11,14 @@ export class ErrorResponseDto {
     description: 'Error message or array of validation error messages',
     oneOf: [
       { type: 'string', example: 'User not found' },
-      { 
-        type: 'array', 
+      {
+        type: 'array',
         items: { type: 'string' },
-        example: ['Email is required', 'Password must be at least 6 characters long']
-      }
+        example: [
+          'Email is required',
+          'Password must be at least 6 characters long',
+        ],
+      },
     ],
   })
   message: string | string[];
@@ -32,10 +35,13 @@ export class ValidationErrorResponseDto {
   @ApiProperty({ example: 422 })
   statusCode: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     type: 'array',
     items: { type: 'string' },
-    example: ['Email is required', 'Password must be at least 6 characters long']
+    example: [
+      'Email is required',
+      'Password must be at least 6 characters long',
+    ],
   })
   message: string[];
 
@@ -85,4 +91,4 @@ export class InternalServerErrorResponseDto {
 
   @ApiProperty({ example: 'Internal Server Error' })
   error: string;
-} 
+}

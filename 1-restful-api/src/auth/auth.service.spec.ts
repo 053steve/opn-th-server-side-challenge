@@ -93,17 +93,21 @@ describe('AuthService', () => {
     });
 
     it('should throw ConflictException when user already exists', async () => {
-      mockUsersService.create.mockRejectedValue(new ConflictException('User already exists'));
+      mockUsersService.create.mockRejectedValue(
+        new ConflictException('User already exists'),
+      );
 
-      await expect(service.signup(validCreateUserDto))
-        .rejects.toThrow(ConflictException);
+      await expect(service.signup(validCreateUserDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw UnauthorizedException for other signup errors', async () => {
       mockUsersService.create.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.signup(validCreateUserDto))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(service.signup(validCreateUserDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should generate tokens with correct payload', async () => {
@@ -116,11 +120,11 @@ describe('AuthService', () => {
 
       expect(mockJwtService.signAsync).toHaveBeenCalledWith(
         { sub: 'user-id', email: 'test@example.com' },
-        { secret: 'access-secret', expiresIn: '15m' }
+        { secret: 'access-secret', expiresIn: '15m' },
       );
       expect(mockJwtService.signAsync).toHaveBeenCalledWith(
         { sub: 'user-id', email: 'test@example.com' },
-        { secret: 'refresh-secret', expiresIn: '7d' }
+        { secret: 'refresh-secret', expiresIn: '7d' },
       );
     });
   });
@@ -157,23 +161,30 @@ describe('AuthService', () => {
       expect(result.user).not.toHaveProperty('password');
       expect(result).toHaveProperty('accessToken', 'access-token');
       expect(result).toHaveProperty('refreshToken', 'refresh-token');
-      expect(mockUsersService.findByEmail).toHaveBeenCalledWith('test@example.com');
-      expect(mockBcryptCompare).toHaveBeenCalledWith('password123', 'hashedPassword');
+      expect(mockUsersService.findByEmail).toHaveBeenCalledWith(
+        'test@example.com',
+      );
+      expect(mockBcryptCompare).toHaveBeenCalledWith(
+        'password123',
+        'hashedPassword',
+      );
     });
 
     it('should throw UnauthorizedException when user not found', async () => {
       mockUsersService.findByEmail.mockResolvedValue(null);
 
-      await expect(service.login(loginDto))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException when password is invalid', async () => {
       mockUsersService.findByEmail.mockResolvedValue(mockUserWithPassword);
       mockBcryptCompare.mockResolvedValue(false);
 
-      await expect(service.login(loginDto))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should return user without password', async () => {
@@ -218,7 +229,9 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('user', mockUserWithoutPassword);
       expect(result).toHaveProperty('accessToken', 'new-access-token');
       expect(result).toHaveProperty('refreshToken', 'new-refresh-token');
-      expect(mockJwtService.verify).toHaveBeenCalledWith(refreshToken, { secret: 'refresh-secret' });
+      expect(mockJwtService.verify).toHaveBeenCalledWith(refreshToken, {
+        secret: 'refresh-secret',
+      });
       expect(mockUsersService.findOne).toHaveBeenCalledWith('user-id');
     });
 
@@ -228,8 +241,9 @@ describe('AuthService', () => {
         throw new Error('Invalid token');
       });
 
-      await expect(service.refreshToken(invalidToken))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(service.refreshToken(invalidToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException when token is expired', async () => {
@@ -238,13 +252,15 @@ describe('AuthService', () => {
         throw new Error('Token expired');
       });
 
-      await expect(service.refreshToken(expiredToken))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(service.refreshToken(expiredToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
   describe('changePassword', () => {
     const changePasswordDto: ChangePasswordDto = {
+      userId: 'user-id',
       currentPassword: 'oldPassword',
       newPassword: 'newPassword123',
     };
@@ -255,14 +271,41 @@ describe('AuthService', () => {
       const result = await service.changePassword('user-id', changePasswordDto);
 
       expect(result).toEqual({ message: 'Password changed successfully' });
-      expect(mockUsersService.changePassword).toHaveBeenCalledWith('user-id', changePasswordDto);
+      expect(mockUsersService.changePassword).toHaveBeenCalledWith(
+        'user-id',
+        changePasswordDto,
+      );
     });
 
     it('should propagate errors from users service', async () => {
-      mockUsersService.changePassword.mockRejectedValue(new UnauthorizedException('Current password is incorrect'));
+      mockUsersService.changePassword.mockRejectedValue(
+        new UnauthorizedException('Current password is incorrect'),
+      );
 
-      await expect(service.changePassword('user-id', changePasswordDto))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.changePassword('user-id', changePasswordDto),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should use userId from DTO parameter', async () => {
+      const differentUserId = 'different-user-id';
+      const changePasswordDtoWithDifferentId: ChangePasswordDto = {
+        userId: differentUserId,
+        currentPassword: 'oldPassword',
+        newPassword: 'newPassword123',
+      };
+
+      mockUsersService.changePassword.mockResolvedValue(undefined);
+
+      await service.changePassword(
+        differentUserId,
+        changePasswordDtoWithDifferentId,
+      );
+
+      expect(mockUsersService.changePassword).toHaveBeenCalledWith(
+        differentUserId,
+        changePasswordDtoWithDifferentId,
+      );
     });
   });
 
@@ -301,11 +344,11 @@ describe('AuthService', () => {
 
       expect(mockJwtService.signAsync).toHaveBeenCalledWith(
         { sub: 'user-id', email: 'test@example.com' },
-        { secret: 'custom-access-secret', expiresIn: '15m' }
+        { secret: 'custom-access-secret', expiresIn: '15m' },
       );
       expect(mockJwtService.signAsync).toHaveBeenCalledWith(
         { sub: 'user-id', email: 'test@example.com' },
-        { secret: 'custom-refresh-secret', expiresIn: '7d' }
+        { secret: 'custom-refresh-secret', expiresIn: '7d' },
       );
 
       // Clean up
@@ -347,11 +390,11 @@ describe('AuthService', () => {
 
       expect(mockJwtService.signAsync).toHaveBeenCalledWith(
         { sub: 'user-id', email: 'test@example.com' },
-        { secret: 'access-secret', expiresIn: '15m' }
+        { secret: 'access-secret', expiresIn: '15m' },
       );
       expect(mockJwtService.signAsync).toHaveBeenCalledWith(
         { sub: 'user-id', email: 'test@example.com' },
-        { secret: 'refresh-secret', expiresIn: '7d' }
+        { secret: 'refresh-secret', expiresIn: '7d' },
       );
     });
   });

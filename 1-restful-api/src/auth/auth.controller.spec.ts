@@ -81,17 +81,23 @@ describe('AuthController', () => {
     });
 
     it('should handle ConflictException when user already exists', async () => {
-      mockAuthService.signup.mockRejectedValue(new ConflictException('User with this email already exists'));
+      mockAuthService.signup.mockRejectedValue(
+        new ConflictException('User with this email already exists'),
+      );
 
-      await expect(controller.signup(validSignupDto))
-        .rejects.toThrow(ConflictException);
+      await expect(controller.signup(validSignupDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should handle UnauthorizedException for signup failures', async () => {
-      mockAuthService.signup.mockRejectedValue(new UnauthorizedException('Signup failed'));
+      mockAuthService.signup.mockRejectedValue(
+        new UnauthorizedException('Signup failed'),
+      );
 
-      await expect(controller.signup(validSignupDto))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(controller.signup(validSignupDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should validate required fields', async () => {
@@ -109,8 +115,7 @@ describe('AuthController', () => {
       // but we can test that the controller passes the DTO correctly
       mockAuthService.signup.mockRejectedValue(new Error('Validation failed'));
 
-      await expect(controller.signup(invalidSignupDto))
-        .rejects.toThrow();
+      await expect(controller.signup(invalidSignupDto)).rejects.toThrow();
     });
   });
 
@@ -146,10 +151,13 @@ describe('AuthController', () => {
     });
 
     it('should handle UnauthorizedException for invalid credentials', async () => {
-      mockAuthService.login.mockRejectedValue(new UnauthorizedException('Invalid credentials'));
+      mockAuthService.login.mockRejectedValue(
+        new UnauthorizedException('Invalid credentials'),
+      );
 
-      await expect(controller.login(validLoginDto))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(controller.login(validLoginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should handle missing email', async () => {
@@ -160,8 +168,7 @@ describe('AuthController', () => {
 
       mockAuthService.login.mockRejectedValue(new Error('Validation failed'));
 
-      await expect(controller.login(invalidLoginDto))
-        .rejects.toThrow();
+      await expect(controller.login(invalidLoginDto)).rejects.toThrow();
     });
 
     it('should handle missing password', async () => {
@@ -172,8 +179,7 @@ describe('AuthController', () => {
 
       mockAuthService.login.mockRejectedValue(new Error('Validation failed'));
 
-      await expect(controller.login(invalidLoginDto))
-        .rejects.toThrow();
+      await expect(controller.login(invalidLoginDto)).rejects.toThrow();
     });
   });
 
@@ -204,21 +210,29 @@ describe('AuthController', () => {
       const result = await controller.refreshToken(validRefreshTokenDto);
 
       expect(result).toEqual(mockRefreshResponse);
-      expect(mockAuthService.refreshToken).toHaveBeenCalledWith('valid-refresh-token');
+      expect(mockAuthService.refreshToken).toHaveBeenCalledWith(
+        'valid-refresh-token',
+      );
     });
 
     it('should handle UnauthorizedException for invalid refresh token', async () => {
-      mockAuthService.refreshToken.mockRejectedValue(new UnauthorizedException('Invalid refresh token'));
+      mockAuthService.refreshToken.mockRejectedValue(
+        new UnauthorizedException('Invalid refresh token'),
+      );
 
-      await expect(controller.refreshToken(validRefreshTokenDto))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        controller.refreshToken(validRefreshTokenDto),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should handle expired refresh token', async () => {
-      mockAuthService.refreshToken.mockRejectedValue(new UnauthorizedException('Token expired'));
+      mockAuthService.refreshToken.mockRejectedValue(
+        new UnauthorizedException('Token expired'),
+      );
 
-      await expect(controller.refreshToken(validRefreshTokenDto))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        controller.refreshToken(validRefreshTokenDto),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should handle missing refresh token', async () => {
@@ -226,15 +240,19 @@ describe('AuthController', () => {
         refreshToken: '',
       };
 
-      mockAuthService.refreshToken.mockRejectedValue(new Error('Validation failed'));
+      mockAuthService.refreshToken.mockRejectedValue(
+        new Error('Validation failed'),
+      );
 
-      await expect(controller.refreshToken(invalidRefreshTokenDto))
-        .rejects.toThrow();
+      await expect(
+        controller.refreshToken(invalidRefreshTokenDto),
+      ).rejects.toThrow();
     });
   });
 
   describe('changePassword', () => {
     const validChangePasswordDto: ChangePasswordDto = {
+      userId: 'user-id',
       currentPassword: 'oldPassword123',
       newPassword: 'newPassword456',
     };
@@ -251,63 +269,107 @@ describe('AuthController', () => {
     };
 
     it('should change password successfully', async () => {
-      mockAuthService.changePassword.mockResolvedValue(mockChangePasswordResponse);
+      mockAuthService.changePassword.mockResolvedValue(
+        mockChangePasswordResponse,
+      );
 
-      const result = await controller.changePassword(mockRequest, validChangePasswordDto);
+      const result = await controller.changePassword(
+        mockRequest,
+        validChangePasswordDto,
+      );
 
       expect(result).toEqual(mockChangePasswordResponse);
-      expect(mockAuthService.changePassword).toHaveBeenCalledWith('user-id', validChangePasswordDto);
+      expect(mockAuthService.changePassword).toHaveBeenCalledWith(
+        'user-id',
+        validChangePasswordDto,
+      );
     });
 
     it('should handle UnauthorizedException for incorrect current password', async () => {
-      mockAuthService.changePassword.mockRejectedValue(new UnauthorizedException('Current password is incorrect'));
+      mockAuthService.changePassword.mockRejectedValue(
+        new UnauthorizedException('Current password is incorrect'),
+      );
 
-      await expect(controller.changePassword(mockRequest, validChangePasswordDto))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        controller.changePassword(mockRequest, validChangePasswordDto),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should extract user ID from request correctly', async () => {
-      mockAuthService.changePassword.mockResolvedValue(mockChangePasswordResponse);
+    it('should extract user ID from DTO correctly', async () => {
+      mockAuthService.changePassword.mockResolvedValue(
+        mockChangePasswordResponse,
+      );
 
       await controller.changePassword(mockRequest, validChangePasswordDto);
 
-      expect(mockAuthService.changePassword).toHaveBeenCalledWith('user-id', validChangePasswordDto);
+      expect(mockAuthService.changePassword).toHaveBeenCalledWith(
+        'user-id',
+        validChangePasswordDto,
+      );
+    });
+
+    it('should handle missing userId', async () => {
+      const invalidChangePasswordDto = {
+        userId: '',
+        currentPassword: 'oldPassword123',
+        newPassword: 'newPassword456',
+      };
+
+      mockAuthService.changePassword.mockRejectedValue(
+        new Error('Validation failed'),
+      );
+
+      await expect(
+        controller.changePassword(mockRequest, invalidChangePasswordDto),
+      ).rejects.toThrow();
     });
 
     it('should handle missing current password', async () => {
       const invalidChangePasswordDto = {
+        userId: 'user-id',
         currentPassword: '',
         newPassword: 'newPassword456',
       };
 
-      mockAuthService.changePassword.mockRejectedValue(new Error('Validation failed'));
+      mockAuthService.changePassword.mockRejectedValue(
+        new Error('Validation failed'),
+      );
 
-      await expect(controller.changePassword(mockRequest, invalidChangePasswordDto))
-        .rejects.toThrow();
+      await expect(
+        controller.changePassword(mockRequest, invalidChangePasswordDto),
+      ).rejects.toThrow();
     });
 
     it('should handle missing new password', async () => {
       const invalidChangePasswordDto = {
+        userId: 'user-id',
         currentPassword: 'oldPassword123',
         newPassword: '',
       };
 
-      mockAuthService.changePassword.mockRejectedValue(new Error('Validation failed'));
+      mockAuthService.changePassword.mockRejectedValue(
+        new Error('Validation failed'),
+      );
 
-      await expect(controller.changePassword(mockRequest, invalidChangePasswordDto))
-        .rejects.toThrow();
+      await expect(
+        controller.changePassword(mockRequest, invalidChangePasswordDto),
+      ).rejects.toThrow();
     });
 
     it('should handle short new password', async () => {
       const invalidChangePasswordDto = {
+        userId: 'user-id',
         currentPassword: 'oldPassword123',
         newPassword: '123',
       };
 
-      mockAuthService.changePassword.mockRejectedValue(new Error('Validation failed'));
+      mockAuthService.changePassword.mockRejectedValue(
+        new Error('Validation failed'),
+      );
 
-      await expect(controller.changePassword(mockRequest, invalidChangePasswordDto))
-        .rejects.toThrow();
+      await expect(
+        controller.changePassword(mockRequest, invalidChangePasswordDto),
+      ).rejects.toThrow();
     });
   });
 
@@ -375,4 +437,4 @@ describe('AuthController', () => {
       expect(result).toEqual(mockLoginResponse);
     });
   });
-}); 
+});

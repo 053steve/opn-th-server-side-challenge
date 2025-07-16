@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
 import { User } from './user.interface';
@@ -12,7 +17,9 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
     // Check if user already exists
-    const existingUser = this.users.find(user => user.email === createUserDto.email);
+    const existingUser = this.users.find(
+      (user) => user.email === createUserDto.email,
+    );
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
     }
@@ -42,14 +49,14 @@ export class UsersService {
   }
 
   async findAll(): Promise<Omit<User, 'password'>[]> {
-    return this.users.map(user => {
+    return this.users.map((user) => {
       const { password, ...userWithoutPassword } = user;
       return userWithoutPassword;
     });
   }
 
   async findOne(id: string): Promise<Omit<User, 'password'>> {
-    const user = this.users.find(user => user.id === id);
+    const user = this.users.find((user) => user.id === id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -59,11 +66,14 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.users.find(user => user.email === email) || null;
+    return this.users.find((user) => user.email === email) || null;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<Omit<User, 'password'>> {
-    const userIndex = this.users.findIndex(user => user.id === id);
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<Omit<User, 'password'>> {
+    const userIndex = this.users.findIndex((user) => user.id === id);
     if (userIndex === -1) {
       throw new NotFoundException('User not found');
     }
@@ -92,7 +102,7 @@ export class UsersService {
   }
 
   async remove(id: string): Promise<void> {
-    const userIndex = this.users.findIndex(user => user.id === id);
+    const userIndex = this.users.findIndex((user) => user.id === id);
     if (userIndex === -1) {
       throw new NotFoundException('User not found');
     }
@@ -100,20 +110,29 @@ export class UsersService {
     this.users.splice(userIndex, 1);
   }
 
-  async changePassword(id: string, changePasswordDto: ChangePasswordDto): Promise<void> {
-    const user = this.users.find(user => user.id === id);
+  async changePassword(
+    id: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<void> {
+    const user = this.users.find((user) => user.id === id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
     // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(changePasswordDto.currentPassword, user.password);
+    const isCurrentPasswordValid = await bcrypt.compare(
+      changePasswordDto.currentPassword,
+      user.password,
+    );
     if (!isCurrentPasswordValid) {
       throw new UnauthorizedException('Current password is incorrect');
     }
 
     // Hash new password
-    const hashedNewPassword = await bcrypt.hash(changePasswordDto.newPassword, 10);
+    const hashedNewPassword = await bcrypt.hash(
+      changePasswordDto.newPassword,
+      10,
+    );
     user.password = hashedNewPassword;
     user.updatedAt = new Date();
   }
@@ -122,11 +141,14 @@ export class UsersService {
     const today = new Date();
     let age = today.getFullYear() - dateOfBirth.getFullYear();
     const monthDiff = today.getMonth() - dateOfBirth.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dateOfBirth.getDate())) {
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < dateOfBirth.getDate())
+    ) {
       age--;
     }
-    
+
     return age;
   }
 }

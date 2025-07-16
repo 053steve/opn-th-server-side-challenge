@@ -28,7 +28,9 @@ describe('AuthGuard', () => {
     jest.clearAllMocks();
   });
 
-  const createMockExecutionContext = (authHeader?: string): ExecutionContext => {
+  const createMockExecutionContext = (
+    authHeader?: string,
+  ): ExecutionContext => {
     const mockRequest = {
       headers: {
         authorization: authHeader,
@@ -66,50 +68,43 @@ describe('AuthGuard', () => {
     it('should throw UnauthorizedException when authorization header is missing', () => {
       const context = createMockExecutionContext();
 
-      expect(() => guard.canActivate(context))
-        .toThrow(UnauthorizedException);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException when authorization header is empty', () => {
       const context = createMockExecutionContext('');
 
-      expect(() => guard.canActivate(context))
-        .toThrow(UnauthorizedException);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException when authorization header does not start with Bearer', () => {
       const context = createMockExecutionContext('Basic token123');
 
-      expect(() => guard.canActivate(context))
-        .toThrow(UnauthorizedException);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException when token is only Bearer without space', () => {
       const context = createMockExecutionContext('Bearer');
 
-      expect(() => guard.canActivate(context))
-        .toThrow(UnauthorizedException);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException for any non-empty token that is not faketoken_user1', () => {
       const context = createMockExecutionContext('Bearer invalid-token');
 
-      expect(() => guard.canActivate(context))
-        .toThrow(UnauthorizedException);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException for random tokens', () => {
       const context = createMockExecutionContext('Bearer randomtoken123');
 
-      expect(() => guard.canActivate(context))
-        .toThrow(UnauthorizedException);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
     it('should be case-sensitive for Bearer prefix', () => {
       const context = createMockExecutionContext('bearer faketoken_user1');
 
-      expect(() => guard.canActivate(context))
-        .toThrow(UnauthorizedException);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
     it('should extract token correctly and accept faketoken_user1', () => {
@@ -137,22 +132,25 @@ describe('AuthGuard', () => {
     it('should throw UnauthorizedException with correct message for missing header', () => {
       const context = createMockExecutionContext();
 
-      expect(() => guard.canActivate(context))
-        .toThrow(new UnauthorizedException('Missing or invalid authorization header'));
+      expect(() => guard.canActivate(context)).toThrow(
+        new UnauthorizedException('Missing or invalid authorization header'),
+      );
     });
 
     it('should throw UnauthorizedException with correct message for invalid header format', () => {
       const context = createMockExecutionContext('InvalidFormat token123');
 
-      expect(() => guard.canActivate(context))
-        .toThrow(new UnauthorizedException('Missing or invalid authorization header'));
+      expect(() => guard.canActivate(context)).toThrow(
+        new UnauthorizedException('Missing or invalid authorization header'),
+      );
     });
 
     it('should throw UnauthorizedException with correct message for invalid token', () => {
       const context = createMockExecutionContext('Bearer invalid-token');
 
-      expect(() => guard.canActivate(context))
-        .toThrow(new UnauthorizedException('Invalid token'));
+      expect(() => guard.canActivate(context)).toThrow(
+        new UnauthorizedException('Invalid token'),
+      );
     });
   });
 
@@ -182,7 +180,7 @@ describe('AuthGuard', () => {
     it('should always set the same mock user for valid tokens', () => {
       const context1 = createMockExecutionContext('Bearer faketoken_user1');
       const context2 = createMockExecutionContext('Bearer ');
-      
+
       const request1 = context1.switchToHttp().getRequest();
       const request2 = context2.switchToHttp().getRequest();
 
@@ -211,31 +209,28 @@ describe('AuthGuard', () => {
   describe('Token validation logic', () => {
     it('should accept exactly faketoken_user1', () => {
       const context = createMockExecutionContext('Bearer faketoken_user1');
-      
+
       const result = guard.canActivate(context);
-      
+
       expect(result).toBe(true);
     });
 
     it('should reject partial matches of faketoken_user1', () => {
       const context = createMockExecutionContext('Bearer faketoken_user');
-      
-      expect(() => guard.canActivate(context))
-        .toThrow(UnauthorizedException);
+
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
     it('should reject similar but different tokens', () => {
       const context = createMockExecutionContext('Bearer faketoken_user2');
-      
-      expect(() => guard.canActivate(context))
-        .toThrow(UnauthorizedException);
+
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
     it('should reject tokens with extra characters', () => {
       const context = createMockExecutionContext('Bearer faketoken_user1extra');
-      
-      expect(() => guard.canActivate(context))
-        .toThrow(UnauthorizedException);
+
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
   });
 });
