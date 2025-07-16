@@ -235,8 +235,8 @@ graph TB
   - API rate limiting and caching
   - Built-in DDoS protection
 
-#### **Microservices Architecture (AWS ECS/Fargate)**
-All services built in **Golang** for performance and simplicity:
+#### **Microservices Architecture (Kubernetes)**
+Core business logic services built in **Golang** for performance:
 
 - **User Service**: User management, profiles, authentication
 - **Content Service**: Post creation, media management, content moderation
@@ -244,14 +244,27 @@ All services built in **Golang** for performance and simplicity:
 - **Interaction Service**: Likes, comments, shares, social features
 - **Chat Service**: Real-time messaging with WebSocket support
 - **Notification Service**: Push notifications and email delivery
-- **Analytics Service**: User engagement tracking and basic metrics
+- **Media Processing Service**: Image/video transcoding and optimization
 
-#### **Database Strategy: MongoDB Atlas**
-- **Managed Database**: MongoDB Atlas for zero operational overhead
+#### **Advanced Analytics & ML Platform**
+Specialized analytics and machine learning services:
+
+- **Real-time Analytics Service** (Golang): Live engagement tracking, stream processing, instant metrics
+- **Batch Analytics Service** (Golang): Cohort analysis, retention metrics, performance reports
+- **A/B Testing Service** (Golang): Feature flags, experiment management, statistical analysis
+- **ML Pipeline Service** (Python): Recommendation algorithms, content moderation, trend prediction
+- **ML Model Serving** (Python): Real-time predictions, model inference, A/B model testing
+
+#### **Database Strategy: Self-Hosted MongoDB + Specialized Data Stores**
+- **Self-Hosted MongoDB Cluster**: Complete control and cost optimization
 - **Database Per Service**: Each microservice owns its data
-  - User DB, Content DB, Feed DB, Interaction DB, Chat DB, Analytics DB
-- **Secure Connectivity**: AWS PrivateLink for secure, high-performance connections
-- **Built-in Features**: Automatic backups, scaling, and monitoring
+  - User DB, Content DB, Feed DB, Interaction DB, Chat DB, Analytics DB, A/B Test DB
+- **Specialized Data Stores**:
+  - **Feature Store**: Redis + MongoDB for ML features and model artifacts
+  - **Redis Cluster**: Cache, sessions, and real-time metrics
+  - **Elasticsearch**: Content search and analytics indexing
+  - **Apache Kafka**: Event streaming and message bus
+- **Advanced Features**: Custom optimization, backup strategies, compliance control
 
 #### **Supporting Infrastructure**
 - **Cache**: AWS ElastiCache (Redis) for session storage and feed caching
@@ -328,8 +341,20 @@ graph TD
             INTERACTION_SVC["Interaction Service<br/>Golang<br/>- Likes/Comments<br/>- Engagement"]
             CHAT_SVC["Chat Service<br/>Golang<br/>- Real-time Messaging<br/>- WebSockets"]
             NOTIFICATION_SVC["Notification Service<br/>Golang<br/>- Push/Email Logic"]
-            ANALYTICS_SVC["Analytics Service<br/>Golang<br/>- Event Ingestion<br/>- Data Processing"]
             MEDIA_PROC_SVC["Media Processing Svc<br/>- Image/Video<br/>- Transcoding"]
+        end
+
+        subgraph AdvancedAnalytics ["Advanced Analytics & ML Platform"]
+            direction LR
+            REALTIME_ANALYTICS["Real-time Analytics<br/>Golang<br/>- Live engagement tracking<br/>- Stream processing<br/>- Instant metrics"]
+            
+            BATCH_ANALYTICS["Batch Analytics<br/>Golang<br/>- Cohort analysis<br/>- Retention metrics<br/>- Performance reports"]
+            
+            AB_TEST_SVC["A/B Testing Service<br/>Golang<br/>- Feature flags<br/>- Experiment management<br/>- Statistical analysis"]
+            
+            ML_PIPELINE["ML Pipeline Service<br/>Python<br/>- Recommendation engine<br/>- Content moderation<br/>- Trend prediction"]
+            
+            ML_SERVING["ML Model Serving<br/>Python<br/>- Real-time predictions<br/>- Model inference<br/>- A/B model testing"]
         end
 
         subgraph DataStores ["Data Persistence Layer"]
@@ -346,13 +371,17 @@ graph TD
                 
                 CHAT_DB[("Chat DB<br/>MongoDB<br/>- Messages<br/>- Conversations<br/>- Chat Metadata")]
                 
-                ANALYTICS_DB[("Analytics DB<br/>MongoDB<br/>- View Events<br/>- Engagement Data<br/>- Metrics")]
+                ANALYTICS_DB[("Analytics DB<br/>MongoDB<br/>- Raw events<br/>- Processed metrics<br/>- User behavior")]
+                
+                EXPERIMENTS_DB[("A/B Test DB<br/>MongoDB<br/>- Experiments<br/>- Feature flags<br/>- Test results")]
             end
             
-            REDIS_CLUSTER[("Redis Cluster<br/>Cache & Sessions")]
+            REDIS_CLUSTER[("Redis Cluster<br/>Cache & Sessions<br/>& Real-time metrics")]
             MINIO[("MinIO Cluster<br/>S3-Compatible<br/>Object Storage")]
             KAFKA[("Apache Kafka<br/>Event Streaming<br/>& Message Bus")]
-            ELASTICSEARCH[("Elasticsearch<br/>Full-Text Search<br/>& Log Aggregation")]
+            ELASTICSEARCH[("Elasticsearch<br/>Content Search<br/>& Analytics Index")]
+            
+            ML_FEATURE_STORE[("Feature Store<br/>Redis + MongoDB<br/>- ML features<br/>- Model artifacts<br/>- Training data")]
         end
 
         subgraph PlatformServices ["Platform & Supporting Services"]
@@ -363,12 +392,16 @@ graph TD
 
     end
 
-    %% Observability Stack
-    subgraph Observability ["Observability Stack"]
+    %% Observability & Analytics Dashboards
+    subgraph Observability ["Observability & Analytics Dashboards"]
         PROMETHEUS["Prometheus<br/>Metrics & Alerting"]
-        GRAFANA["Grafana<br/>Dashboards &<br/>Visualization"]
+        GRAFANA["Grafana<br/>System Dashboards<br/>& Real-time Analytics"]
         LOKI["Loki<br/>Log Aggregation"]
         JAEGER["Jaeger<br/>Distributed Tracing"]
+        
+        BI_DASHBOARD["Business Intelligence<br/>Custom Dashboard<br/>- User behavior analytics<br/>- Content performance<br/>- A/B test results"]
+        
+        ML_DASHBOARD["ML Monitoring<br/>MLflow Dashboard<br/>- Model performance<br/>- Data drift detection<br/>- Prediction accuracy"]
         
         GRAFANA --> PROMETHEUS
         GRAFANA --> LOKI
@@ -410,6 +443,7 @@ graph TD
     APIGW --> FEED_SVC
     APIGW --> INTERACTION_SVC
     APIGW --> CHAT_SVC
+    APIGW --> AB_TEST_SVC
     
     %% Service -> Data Stores
     USER_SVC --> USER_DB
@@ -418,11 +452,22 @@ graph TD
     CONTENT_SVC --> ELASTICSEARCH
     FEED_SVC --> FEED_DB
     FEED_SVC --> REDIS_CLUSTER
+    FEED_SVC --> ML_SERVING
     INTERACTION_SVC --> INTERACTION_DB
     CHAT_SVC --> CHAT_DB
     CHAT_SVC --> REDIS_CLUSTER
-    ANALYTICS_SVC --> ANALYTICS_DB
-    ANALYTICS_SVC --> KAFKA
+    
+    %% Advanced Analytics Connections
+    REALTIME_ANALYTICS --> ANALYTICS_DB
+    REALTIME_ANALYTICS --> ELASTICSEARCH
+    REALTIME_ANALYTICS --> REDIS_CLUSTER
+    BATCH_ANALYTICS --> ANALYTICS_DB
+    AB_TEST_SVC --> EXPERIMENTS_DB
+    AB_TEST_SVC --> REDIS_CLUSTER
+    ML_PIPELINE --> ML_FEATURE_STORE
+    ML_PIPELINE --> ANALYTICS_DB
+    ML_SERVING --> ML_FEATURE_STORE
+    ML_SERVING --> REDIS_CLUSTER
     
     %% Media Processing Flow
     CONTENT_SVC --> MEDIA_PROC_SVC
@@ -432,6 +477,7 @@ graph TD
     %% Service -> Platform Services
     USER_SVC --> KEYCLOAK
     Microservices -- "reads secrets from" --> VAULT
+    AdvancedAnalytics -- "reads secrets from" --> VAULT
 
     %% Event-Driven Connections
     USER_SVC -- "publishes/subscribes" --> KAFKA
@@ -440,11 +486,20 @@ graph TD
     FEED_SVC -- "subscribes" --> KAFKA
     NOTIFICATION_SVC -- "subscribes" --> KAFKA
     ELASTICSEARCH -- "consumes" --> KAFKA
-    ANALYTICS_SVC -- "consumes" --> KAFKA
+    REALTIME_ANALYTICS -- "consumes" --> KAFKA
+    BATCH_ANALYTICS -- "consumes" --> KAFKA
+    ML_PIPELINE -- "consumes" --> KAFKA
     
     %% Notification Flow
     NOTIFICATION_SVC --> SES
     NOTIFICATION_SVC --> SNS
+
+    %% Dashboard Connections
+    ELASTICSEARCH --> GRAFANA
+    ANALYTICS_DB --> BI_DASHBOARD
+    EXPERIMENTS_DB --> BI_DASHBOARD
+    ML_FEATURE_STORE --> ML_DASHBOARD
+    REALTIME_ANALYTICS --> GRAFANA
 
     %% Observability Connections
     KubernetesCluster -- "metrics" --> PROMETHEUS
@@ -468,6 +523,7 @@ graph TD
     classDef edgeStyle fill:#e0f7fa,stroke:#006064,stroke-width:2px
     classDef k8sStyle fill:#e3f2fd,stroke:#0d47a1,stroke-width:2px
     classDef microserviceStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef analyticsStyle fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
     classDef dataStyle fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
     classDef platformSvcStyle fill:#f1f8e9,stroke:#33691e,stroke-width:2px
     classDef cicdStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
@@ -477,11 +533,12 @@ graph TD
     class iOS,Android,Web clientStyle
     class CDN,WAF,LB,APIGW edgeStyle
     class KubernetesCluster k8sStyle
-    class USER_SVC,CONTENT_SVC,FEED_SVC,INTERACTION_SVC,CHAT_SVC,NOTIFICATION_SVC,ANALYTICS_SVC,MEDIA_PROC_SVC microserviceStyle
-    class USER_DB,CONTENT_DB,FEED_DB,INTERACTION_DB,CHAT_DB,ANALYTICS_DB,REDIS_CLUSTER,MINIO,KAFKA,ELASTICSEARCH dataStyle
+    class USER_SVC,CONTENT_SVC,FEED_SVC,INTERACTION_SVC,CHAT_SVC,NOTIFICATION_SVC,MEDIA_PROC_SVC microserviceStyle
+    class REALTIME_ANALYTICS,BATCH_ANALYTICS,AB_TEST_SVC,ML_PIPELINE,ML_SERVING analyticsStyle
+    class USER_DB,CONTENT_DB,FEED_DB,INTERACTION_DB,CHAT_DB,ANALYTICS_DB,EXPERIMENTS_DB,REDIS_CLUSTER,MINIO,KAFKA,ELASTICSEARCH,ML_FEATURE_STORE dataStyle
     class KEYCLOAK,VAULT platformSvcStyle
     class GITLAB,JENKINS,SONARQUBE,ARGOCD,TERRAFORM cicdStyle
-    class PROMETHEUS,GRAFANA,LOKI,JAEGER obsStyle
+    class PROMETHEUS,GRAFANA,LOKI,JAEGER,BI_DASHBOARD,ML_DASHBOARD obsStyle
     class OMISE,SES,SNS externalStyle
 ```
 
@@ -505,12 +562,14 @@ graph TD
 - **Massive Cost Savings**: No egress fees, storage costs reduced by 70%
 - **Data Sovereignty**: Complete control over data location and access
 
-#### **4. Advanced Observability Stack**
-**CloudWatch → Prometheus + Grafana + Loki + Jaeger**
+#### **4. Advanced Observability & Analytics Dashboards**
+**CloudWatch → Prometheus + Grafana + Loki + Jaeger + Specialized Dashboards**
 - **Prometheus**: Advanced metrics collection and alerting
-- **Grafana**: Rich dashboards and visualization
+- **Grafana**: System dashboards and real-time analytics visualization
 - **Loki**: Efficient log aggregation and search
 - **Jaeger**: Distributed tracing for complex microservices
+- **Business Intelligence Dashboard**: User behavior analytics, content performance, A/B test results
+- **ML Monitoring Dashboard**: Model performance tracking, data drift detection, prediction accuracy
 
 #### **5. Enhanced CI/CD & GitOps**
 **AWS CodePipeline → GitLab + Jenkins + ArgoCD**
@@ -529,7 +588,7 @@ graph TD
 #### **7. Enhanced Security & Identity**
 - **Keycloak**: Open-source identity and access management
 - **HashiCorp Vault**: Centralized secrets management
-- **WAF (ModSecurity)**: Web application firewall for threat protection
+- **WAF (ModSecurity)**: Web application firewall for threat protection ex bot protection, DDos attack fileupload protection and etc
 
 ### 🔧 **Hybrid Cloud Strategy**
 
@@ -556,11 +615,32 @@ User Actions → Kafka → Stream Processing → Analytics DB
 ```
 
 #### **Enhanced Analytics Features**
-- **Real-time Engagement Metrics**: Live user activity tracking
-- **Content Performance Analytics**: Post reach, engagement rates
-- **User Behavior Analysis**: Funnel analysis, retention metrics
-- **A/B Testing Framework**: Feature flags and experiment tracking
-- **Machine Learning Pipeline**: Recommendation algorithms, content moderation
+
+**Real-time Engagement Metrics** (Real-time Analytics Service)
+- Live user activity tracking and instant engagement metrics
+- Stream processing of user interactions via Kafka
+- Sub-second latency for trending content detection
+
+**Content Performance Analytics** (Batch Analytics Service + Elasticsearch)
+- Post reach analysis, engagement rates, and viral content identification
+- Complex aggregation queries and content indexing
+- Performance dashboards and automated reporting
+
+**User Behavior Analysis** (Batch Analytics Service)
+- Funnel analysis for user journey optimization
+- Cohort analysis and retention metrics
+- Behavioral segmentation and pattern recognition
+
+**A/B Testing Framework** (A/B Testing Service)
+- Feature flags for controlled rollouts
+- Statistical experiment management and analysis
+- Real-time experiment monitoring and automated decision making
+
+**Machine Learning Pipeline** (ML Pipeline + ML Serving Services)
+- Recommendation algorithms for personalized feeds
+- Automated content moderation using AI models
+- Trend prediction and user preference learning
+- Real-time model inference and A/B model testing
 
 ### 💰 **Cost Optimization Results**
 
